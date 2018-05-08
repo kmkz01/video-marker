@@ -1,0 +1,167 @@
+
+<!doctype html>
+<html>
+<head>
+   <title>Video.js Markers Example</title>
+   <link rel="stylesheet" type="text/css" href="example.css">
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/4.12.14/video-js.css" rel="stylesheet">
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-markers/0.7.0/videojs.markers.css" rel="stylesheet">
+
+</head>
+<body>
+  <video id="test_video" controls preload="none" class="video-js vjs-default-skin" width="640" height="400">
+      <source src="http://vjs.zencdn.net/v/oceans.mp4" type="video/mp4">
+      <source src="http://vjs.zencdn.net/v/oceans.webm" type="video/webm">
+  </video>
+
+  <style>
+  .blue{
+     background-color: #4949d8 !important;
+  }
+  </style>
+
+  <ul id='marker-list'>
+
+  </ul>
+
+  <div class="control">
+     <div class='prev'>Prev</div>
+     <div class='next'>Next</div>
+  </div>
+</body>
+
+<script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/4.12.14/video.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-markers/0.7.0/videojs-markers.js"></script>
+
+<script>
+// データベースの参照を準備
+   // initialize video.js
+   //常にバーを表示
+   var player = videojs('test_video', { inactivityTimeout: 0 });
+   var markers = [];
+
+   //load the marker plugin
+   player.markers({
+      markerTip:{
+         display: true,
+         text: function(marker){
+            return marker.text;
+         }
+      },
+      breakOverlay:{
+         display: true,
+         displayTime: 10,
+         text: function(marker) {
+            return  marker.text;
+         }
+      },
+      onMarkerReached: function(marker) {
+        console.log(marker);
+      },
+      markers: markers
+   });
+
+   var firebaseRef = new Firebase("https://chat-da794.firebaseio.com");
+   var messagesRef = firebaseRef.child('log'); //
+
+   function snapshotToArray(snapshot) {
+       var returnArr = [];
+       var i = 0;
+       //collision,cry,display,hr.sinario.sp,time
+       snapshot.forEach(function(childSnapshot) {
+           var item = childSnapshot.val();
+           item.key = childSnapshot.key;
+           var messege;
+           switch (i) {
+             case 0:
+               if(item == 0){
+                 messege = "非聴診中"
+               }else{
+                 messege = "聴診中"
+               }
+               break;
+             case 1:
+               break;
+             case 2:
+               if(item == 0){
+                 messege = "モニタ非表示"
+               }else{
+                 messege = "モニタ表示"
+               }
+               break;
+             case 3:
+               messege = "心拍数"　+ item
+               break;
+             case 4:
+               break;
+             case 5:
+               messege = "SpO2"+" "　+ item
+               break;
+             case 6:
+               break;
+            case 7:
+                break;
+             default:
+           }
+             i++
+             returnArr.push(messege);
+       });
+       return returnArr;
+   };
+
+   function snapshotTimeArray(snapshot) {
+       var returnTime = 0;
+       var i = 0;
+       //collision,cry,display,hr.sinario.sp,time
+       snapshot.forEach(function(childSnapshot) {
+           var item = childSnapshot.val();
+           item.key = childSnapshot.key;
+           if(i==7)
+             returnTime = item;
+             i++;
+       });
+       return returnTime;
+   };
+
+   var i= 0
+   messagesRef.on('child_added', function(snapshot) {
+    if(i == 3){
+    player.markers.add([{
+          time: snapshotTimeArray(snapshot),
+          text: snapshotToArray(snapshot),
+          class: "blue"
+       }]);
+    }else{
+      player.markers.add([{
+            time: snapshotTimeArray(snapshot),
+            text: snapshotToArray(snapshot),
+         }]);
+    }
+    i++;
+ });
+
+ $(".next").click(function(){
+    player.markers.next();
+ });
+
+ $(".prev").click(function(){
+    player.markers.prev();
+ });
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyBubKd9UFt3d4t5H-zDcY63U-8KTa9dzoY",
+    authDomain: "chat-da794.firebaseapp.com",
+    databaseURL: "https://chat-da794.firebaseio.com",
+    projectId: "chat-da794",
+    storageBucket: "chat-da794.appspot.com",
+    messagingSenderId: "888540175264"
+  };
+  firebase.initializeApp(config);
+</script>
+</html>
